@@ -1,4 +1,4 @@
-package org.crs.domain;
+package org.crs.enums;
 
 public enum CarType {
     SEDAN,

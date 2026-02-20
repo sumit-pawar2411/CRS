@@ -1,39 +1,41 @@
 package org.crs.service;
 
-import org.crs.domain.Car;
-import org.crs.domain.CarType;
+import org.crs.enums.CarType;
+import org.crs.interfaces.Reservable;
+import org.crs.model.Car;
+
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class CarInventory {
 
-    private final Map<CarType, Queue<Car>> availableCars = new EnumMap<>(CarType.class);
-    private final AtomicInteger carIdGenerator = new AtomicInteger(1);
+    private final Map<CarType, List<Reservable>> carsByType = new HashMap<>();
 
-    public CarInventory(Map<CarType, Integer> initialStock) {
-        for (CarType type : initialStock.keySet()) {
-            Queue<Car> queue = new LinkedList<>();
-            int count = initialStock.get(type);
-            for (int i = 0; i < count; i++) {
-                queue.add(new Car(carIdGenerator.getAndIncrement(), type));
-            }
-            availableCars.put(type, queue);
+    public CarInventory() {
+        for (CarType type : CarType.values()) {
+            carsByType.put(type, new ArrayList<>());
         }
     }
 
-    public Car rentCar(CarType type) {
-        Queue<Car> cars = availableCars.get(type);
-        if (cars != null && !cars.isEmpty()) {
-            return cars.poll();
-        }
-        return null;
+    public void addCar(Reservable car) {
+        carsByType.get(((Car) car).getType()).add(car);
     }
 
-    public void returnCar(Car car) {
-        availableCars.get(car.getType()).offer(car);
+    public Optional<Reservable> getAvailableCar(CarType type) {
+        return carsByType.get(type)
+                .stream()
+                .filter(Reservable::isAvailable)
+                .findFirst();
     }
 
-    public int availableCount(CarType type) {
-        return availableCars.get(type).size();
+    public boolean hasAvailableCar(CarType type) {
+        return getAvailableCount(type) > 0;
     }
+
+    public int getAvailableCount(CarType type) {
+        return (int) carsByType.get(type)
+                .stream()
+                .filter(Reservable::isAvailable)
+                .count();
+    }
+
 }
